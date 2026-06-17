@@ -1,26 +1,13 @@
 package com.integravida.IntegraVidaBackend.profiles.domain.model.valueobjects;
 
-import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDate;
+import java.util.Objects;
 
-@Embeddable
-@Getter
-@NoArgsConstructor
-public class DateOfBirth {
-
-    private LocalDate date;
-
-    public DateOfBirth(LocalDate date) {
-        if (date == null)
-            throw new IllegalArgumentException("Date of birth must not be null");
-        if (date.isAfter(LocalDate.now()))
-            throw new IllegalArgumentException("Date of birth cannot be in the future");
-        this.date = date;
+public record DateOfBirth(LocalDate value) {
+    public DateOfBirth {
+        Objects.requireNonNull(value, "date of birth is required");
+        if (value.isAfter(LocalDate.now())) throw new IllegalArgumentException("date of birth cannot be in the future");
     }
 
-    @Override
-    public String toString() { return date != null ? date.toString() : ""; }
+    public static DateOfBirth of(LocalDate value) { return new DateOfBirth(value); }
 }

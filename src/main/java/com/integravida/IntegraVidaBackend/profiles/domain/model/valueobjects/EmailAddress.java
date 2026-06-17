@@ -1,22 +1,14 @@
 package com.integravida.IntegraVidaBackend.profiles.domain.model.valueobjects;
 
-import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
-@Embeddable
-@Getter
-@NoArgsConstructor
-public class EmailAddress {
-
-    private String email;
-
-    public EmailAddress(String email) {
-        if (email == null || !email.contains("@"))
-            throw new IllegalArgumentException("Invalid email address: " + email);
-        this.email = email.toLowerCase().trim();
+public record EmailAddress(String value) {
+    public EmailAddress {
+        Objects.requireNonNull(value, "email is required");
+        if (!value.contains("@")) throw new IllegalArgumentException("Invalid email address: " + value);
     }
 
-    @Override
-    public String toString() { return email; }
+    public static EmailAddress of(String value) {
+        return new EmailAddress(value.toLowerCase().trim());
+    }
 }

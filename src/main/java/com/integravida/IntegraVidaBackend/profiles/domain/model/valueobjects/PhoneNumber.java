@@ -1,22 +1,12 @@
 package com.integravida.IntegraVidaBackend.profiles.domain.model.valueobjects;
 
-import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
-@Embeddable
-@Getter
-@NoArgsConstructor
-public class PhoneNumber {
-
-    private String number;
-
-    public PhoneNumber(String number) {
-        if (number == null || number.isBlank())
-            throw new IllegalArgumentException("Phone number must not be blank");
-        this.number = number.trim();
+public record PhoneNumber(String value) {
+    public PhoneNumber {
+        Objects.requireNonNull(value, "phone number is required");
+        if (value.isBlank()) throw new IllegalArgumentException("phone number must not be blank");
     }
 
-    @Override
-    public String toString() { return number; }
+    public static PhoneNumber of(String value) { return new PhoneNumber(value.trim()); }
 }
