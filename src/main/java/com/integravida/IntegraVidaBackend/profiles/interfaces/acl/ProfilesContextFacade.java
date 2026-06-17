@@ -1,46 +1,35 @@
 package com.integravida.IntegraVidaBackend.profiles.interfaces.acl;
 
-import com.integravida.IntegraVidaBackend.profiles.domain.services.ProfileQueryService;
-import lombok.RequiredArgsConstructor;
+import com.integravida.IntegraVidaBackend.profiles.application.services.ProfileQueryService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
- * ProfilesContextFacade — Anti-Corruption Layer
- *
- * This facade exposes a simplified API of the Profiles bounded context
- * to be consumed by other bounded contexts (patients, doctors, monitoring, etc.).
- * It prevents direct coupling between contexts by providing a stable interface.
+ * ProfilesContextFacade — ACL
+ * Exposes a stable API of the Profiles bounded context
+ * consumed by patients and doctors bounded contexts.
  */
 @Service
-@RequiredArgsConstructor
 public class ProfilesContextFacade {
+    private final ProfileQueryService queryService;
 
-    private final ProfileQueryService profileQueryService;
-
-    /**
-     * Checks whether a profile exists for the given profile ID.
-     * Used by the patients context to validate before creating a Patient.
-     */
-    public boolean existsProfile(Long profileId) {
-        return profileQueryService.handle(profileId).isPresent();
+    public ProfilesContextFacade(ProfileQueryService queryService) {
+        this.queryService = queryService;
     }
 
-    /**
-     * Returns the full name of a profile by its ID.
-     * Returns empty if the profile does not exist.
-     */
-    public Optional<String> getFullNameByProfileId(Long profileId) {
-        return profileQueryService.handle(profileId)
-                .map(p -> p.getName().getFullName());
+    public boolean existsProfile(UUID profileId) {
+        return queryService.getById(profileId).isSuccess();
     }
 
-    /**
-     * Returns the email of a profile by its ID.
-     */
-    public Optional<String> getEmailByProfileId(Long profileId) {
-        return profileQueryService.handle(profileId)
-                .map(p -> p.getEmailAddress());
+    public Optional<String> getFullNameByProfileId(UUID profileId) {
+        return queryService.getById(profileId)
+                .toOptional().map(p -> p.getName().fullName());
+    }
+
+    public Optional<String> getEmailByProfileId(UUID profileId) {
+        return queryService.getById(profileId)
+                .toOptional().map(p -> p.getEmail().value());
     }
 }
