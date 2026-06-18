@@ -6,6 +6,10 @@ import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.Doct
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.entities.AppointmentEntity;
 
+import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Diagnosis;
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DiagnosisStatus;
+import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.entities.DiagnosisEntity;
+
 public final class MedicalJpaMapper {
     private MedicalJpaMapper() {
     }
@@ -34,6 +38,31 @@ public final class MedicalJpaMapper {
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         entity.setCancelledAt(domain.getCancelledAt().orElse(null));
+        return entity;
+    }
+
+    public static Diagnosis toDomain(DiagnosisEntity entity) {
+        return Diagnosis.reconstitute(
+                entity.getId(),
+                PatientId.of(entity.getPatientId()),
+                DoctorId.of(entity.getDoctorId()),
+                entity.getDescription(),
+                entity.getRecommendation(),
+                DiagnosisStatus.valueOf(entity.getStatus()),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt());
+    }
+
+    public static DiagnosisEntity toEntity(Diagnosis domain) {
+        DiagnosisEntity entity = new DiagnosisEntity();
+        entity.setId(domain.getId());
+        entity.setPatientId(domain.getPatientId().value());
+        entity.setDoctorId(domain.getDoctorId().value());
+        entity.setDescription(domain.getDescription());
+        entity.setRecommendation(domain.getRecommendation());
+        entity.setStatus(domain.getStatus().name());
+        entity.setCreatedAt(domain.getCreatedAt());
+        entity.setUpdatedAt(domain.getUpdatedAt());
         return entity;
     }
 }
