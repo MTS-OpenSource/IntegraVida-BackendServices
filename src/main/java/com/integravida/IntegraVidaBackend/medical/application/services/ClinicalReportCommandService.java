@@ -1,6 +1,8 @@
 package com.integravida.IntegraVidaBackend.medical.application.services;
 
 import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.ClinicalReportRepository;
+import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.ExternalMonitoringService;
+import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.ExternalPatientService;
 import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.ClinicalReport;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
@@ -16,9 +18,15 @@ import java.util.UUID;
 @Transactional
 public class ClinicalReportCommandService {
     private final ClinicalReportRepository clinicalReportRepository;
+    private final ExternalPatientService externalPatientService;
+    private final ExternalMonitoringService externalMonitoringService;
 
-    public ClinicalReportCommandService(ClinicalReportRepository clinicalReportRepository) {
+    public ClinicalReportCommandService(ClinicalReportRepository clinicalReportRepository,
+                                        ExternalPatientService externalPatientService,
+                                        ExternalMonitoringService externalMonitoringService) {
         this.clinicalReportRepository = clinicalReportRepository;
+        this.externalPatientService = externalPatientService;
+        this.externalMonitoringService = externalMonitoringService;
     }
 
     public Result<ClinicalReport, ApplicationError> create(PatientId patientId,
@@ -26,6 +34,16 @@ public class ClinicalReportCommandService {
                                                            String title,
                                                            String summary,
                                                            String recommendations) {
+        if (!externalPatientService.existsById(patientId)) {
+            return Result.<ClinicalReport, ApplicationError>failure(
+                    ApplicationError.notFound("patient", patientId.value().toString()));
+        }
+
+        if (!externalMonitoringService.hasGlucoseRecordsByPatientId(patientId)) {
+            return Result.<ClinicalReport, ApplicationError>failure(
+                    ApplicationError.notFound("glucose records for patient", patientId.value().toString()));
+        }
+
         var now = LocalDateTime.now();
 
         var clinicalReport = ClinicalReport.create(
