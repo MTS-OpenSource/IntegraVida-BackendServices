@@ -10,6 +10,10 @@ import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Diagno
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DiagnosisStatus;
 import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.entities.DiagnosisEntity;
 
+import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.ClinicalReport;
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.ClinicalReportStatus;
+import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.entities.ClinicalReportEntity;
+
 public final class MedicalJpaMapper {
     private MedicalJpaMapper() {
     }
@@ -61,6 +65,35 @@ public final class MedicalJpaMapper {
         entity.setDescription(domain.getDescription());
         entity.setRecommendation(domain.getRecommendation());
         entity.setStatus(domain.getStatus().name());
+        entity.setCreatedAt(domain.getCreatedAt());
+        entity.setUpdatedAt(domain.getUpdatedAt());
+        return entity;
+    }
+
+    public static ClinicalReport toDomain(ClinicalReportEntity entity) {
+        return ClinicalReport.reconstitute(
+                entity.getId(),
+                PatientId.of(entity.getPatientId()),
+                DoctorId.of(entity.getDoctorId()),
+                entity.getTitle(),
+                entity.getSummary(),
+                entity.getRecommendations(),
+                ClinicalReportStatus.valueOf(entity.getStatus()),
+                entity.getIssuedAt(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt());
+    }
+
+    public static ClinicalReportEntity toEntity(ClinicalReport domain) {
+        ClinicalReportEntity entity = new ClinicalReportEntity();
+        entity.setId(domain.getId());
+        entity.setPatientId(domain.getPatientId().value());
+        entity.setDoctorId(domain.getDoctorId().value());
+        entity.setTitle(domain.getTitle());
+        entity.setSummary(domain.getSummary());
+        entity.setRecommendations(domain.getRecommendations());
+        entity.setStatus(domain.getStatus().name());
+        entity.setIssuedAt(domain.getIssuedAt().orElse(null));
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         return entity;
