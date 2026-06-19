@@ -4,19 +4,27 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "medication_entity")
 public class MedicationEntity {
     @Id
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid", nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid", nullable = false)
     private UUID patientId;
 
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid", nullable = false)
     private UUID treatmentId;
 
     @Column(nullable = false)

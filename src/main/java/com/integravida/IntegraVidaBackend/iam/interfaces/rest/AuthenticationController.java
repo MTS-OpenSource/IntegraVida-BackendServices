@@ -1,6 +1,5 @@
 package com.integravida.IntegraVidaBackend.iam.interfaces.rest;
 
-import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.SignInResource;
 import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.SignUpResource;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,14 +35,11 @@ public class AuthenticationController {
         }
     }
 
-    @Operation(summary = "Iniciar sesión (Sign-In)", description = "Autentica al usuario y devuelve un token JWT.")
+    @Operation(summary = "Iniciar sesión (Sign-In)", description = "Autentica al usuario y devuelve una respuesta simple.")
     @PostMapping("/sign-in")
-    public ResponseEntity<AuthenticatedUserResource> signIn(@Valid @RequestBody SignInResource resource) {
+    public ResponseEntity<?> signIn(@Valid @RequestBody SignInResource resource) {
         try {
-            String generatedToken = "jwt-token-simulado-aqui";
-
-            AuthenticatedUserResource response = new AuthenticatedUserResource(resource.username(), generatedToken);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok("Inicio de sesión procesado correctamente");
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

@@ -3,17 +3,24 @@ package com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.j
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "treatment_entity")
 public class TreatmentEntity {
     @Id
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid", nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid", nullable = false)
     private UUID patientId;
 
     @Column(nullable = false)
