@@ -1,5 +1,4 @@
 package com.integravida.IntegraVidaBackend.medical.infrastructure.integration;
-
 import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.ExternalPatientService;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-
 @Service("medicalRestExternalPatientServiceAdapter")
 public class RestExternalPatientServiceAdapter implements ExternalPatientService {
     private final RestClient restClient;
