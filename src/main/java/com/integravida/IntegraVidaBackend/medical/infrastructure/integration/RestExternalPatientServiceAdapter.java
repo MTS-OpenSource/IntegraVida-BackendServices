@@ -8,7 +8,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
-@Service
+@Service("medicalRestExternalPatientServiceAdapter")
 public class RestExternalPatientServiceAdapter implements ExternalPatientService {
     private final RestClient restClient;
     private final boolean localFallback;
