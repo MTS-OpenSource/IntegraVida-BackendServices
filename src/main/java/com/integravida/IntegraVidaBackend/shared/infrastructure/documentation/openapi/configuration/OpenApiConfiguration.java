@@ -57,8 +57,12 @@ public class OpenApiConfiguration {
 
         openApi.servers(List.of(
                 new Server()
+                        .url("https://integravida-backendservices.onrender.com")
+                        .description("Production Environment"),
+                new Server()
                         .url("http://localhost:8096")
                         .description("Local Development Environment")
+
         ));
         return openApi;
     }

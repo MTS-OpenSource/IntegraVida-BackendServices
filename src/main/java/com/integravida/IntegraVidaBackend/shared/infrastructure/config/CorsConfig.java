@@ -21,7 +21,8 @@ public class CorsConfig {
                 registry.addMapping("/api/v1/**")
                         .allowedOrigins(
                                 "http://localhost:4200",
-                                "https://integravida-appweb.web.app"
+                                "https://integravida-appweb.web.app",
+                                "https://integravida-backendservices.onrender.com"
                         )
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
