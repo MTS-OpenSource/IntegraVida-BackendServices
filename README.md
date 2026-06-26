@@ -593,19 +593,6 @@ Este proyecto es parte de **MTS-OpenSource**. Consulta el archivo LICENSE para m
 
 ---
 
-## 🎯 Roadmap
-
-- [ ] Implementar Spring Security con JWT
-- [ ] Agregar tests unitarios e integración completos
-- [ ] Documentar todos los Bounded Contexts
-- [ ] Configurar CI/CD con GitHub Actions
-- [ ] Implementar cache con Redis
-- [ ] Agregar métricas con Prometheus
-- [ ] Configurar alertas y monitoreo
-- [ ] Migrar a Java modules
-
----
-
 **Última actualización**: Junio 2026  
 **Estado**: En desarrollo activo ✅  
 **Versión**: 0.0.1-SNAPSHOT  
