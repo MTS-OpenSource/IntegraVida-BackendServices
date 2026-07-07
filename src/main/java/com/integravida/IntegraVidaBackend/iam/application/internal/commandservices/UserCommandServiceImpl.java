@@ -10,6 +10,8 @@ import com.integravida.IntegraVidaBackend.shared.application.result.Result;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class UserCommandServiceImpl {
@@ -44,5 +46,24 @@ public class UserCommandServiceImpl {
         savedUser.clearDomainEvents();
 
         return Result.success(savedUser);
+    }
+
+    public Result<User, ApplicationError> verifyCredentials(String rawUsername, String rawPassword) {
+        var usernameVO = new Username(rawUsername);
+        Optional<User> userOptional = userRepository.findByUsername(usernameVO);
+
+        if (userOptional.isEmpty()) {
+            return Result.failure(ApplicationError.notFound("user", "User not found"));
+        }
+
+        User user = userOptional.get();
+
+        String encryptedPassword = user.getPassword().password();
+
+        if (!passwordEncoder.matches(rawPassword, encryptedPassword)) {
+            return Result.failure(ApplicationError.validationError("credentials", "Invalid password"));
+        }
+
+        return Result.success(user);
     }
 }
