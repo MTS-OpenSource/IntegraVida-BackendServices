@@ -1,14 +1,25 @@
 package com.integravida.IntegraVidaBackend.iam.infrastructure.hashing;
 
-import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Service
-public class DefaultPasswordEncoder {
-    // Basic placeholder for a password encoder since spring-security is not inherently present based on search.
-    // Replace with BCryptPasswordEncoder when spring-security is added to pom.xml
-    public String encode(String rawPassword) {
-        // En un entorno de producción, esto debería usar un hash fuerte (e.g. BCrypt)
-        // Por ahora, o bien se agrega spring security, o simulamos o agregamos una librería como jbcrypt
-        return "hashed_" + rawPassword; // Dummy implementation until library is defined
+@Component
+public class DefaultPasswordEncoder implements PasswordEncoder {
+
+    private final PasswordEncoder passwordEncoder;
+
+    public DefaultPasswordEncoder() {
+        this.passwordEncoder = new BCryptPasswordEncoder();
+    }
+
+    @Override
+    public String encode(CharSequence rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
+    @Override
+    public boolean matches(CharSequence rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 }
