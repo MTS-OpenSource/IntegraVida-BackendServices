@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.monitoring.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.GlucoseRecordCommandService;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.GlucoseRecordQueryService;
 import com.integravida.IntegraVidaBackend.monitoring.domain.model.valueobjects.GlucoseValue;
@@ -41,15 +42,17 @@ import java.util.UUID;
 public class GlucoseRecordController {
     private final GlucoseRecordCommandService commandService;
     private final GlucoseRecordQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
-    public GlucoseRecordController(GlucoseRecordCommandService commandService, GlucoseRecordQueryService queryService) {
+    public GlucoseRecordController(GlucoseRecordCommandService commandService, GlucoseRecordQueryService queryService, JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
     @Operation(
             summary = "Create a glucose record",
-            description = "Stores a new glucose measurement for a patient and triggers an alert when the value is outside the active range."
+            description = "Stores a new glucose measurement for the authenticated patient and triggers an alert when the value is outside the active range."
     )
     @ApiResponses({
             @ApiResponse(
@@ -61,7 +64,7 @@ public class GlucoseRecordController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "glucoseValue": 245.5,
                                       "minimumRange": 70,
                                       "maximumRange": 180,
@@ -87,7 +90,6 @@ public class GlucoseRecordController {
                             schema = @Schema(implementation = CreateGlucoseRecordRequest.class),
                             examples = @ExampleObject(value = """
                                     {
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
                                       "glucoseValue": 245.5,
                                       "measuredAt": "2026-06-13T08:30:00"
                                     }
@@ -95,8 +97,9 @@ public class GlucoseRecordController {
                     )
             )
             @RequestBody CreateGlucoseRecordRequest request) {
+        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(PatientId.of(request.patientId()), GlucoseValue.of(request.glucoseValue()), request.measuredAt()),
+                commandService.create(patientId, GlucoseValue.of(request.glucoseValue()), request.measuredAt()),
                 GlucoseRecordResource::fromDomain,
                 HttpStatus.CREATED);
     }
@@ -115,7 +118,7 @@ public class GlucoseRecordController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "glucoseValue": 245.5,
                                       "minimumRange": 70,
                                       "maximumRange": 180,
@@ -140,8 +143,8 @@ public class GlucoseRecordController {
     }
 
     @Operation(
-            summary = "List glucose records by patient",
-            description = "Returns all records for a patient, optionally filtered by measuredAt range."
+            summary = "List glucose records for the authenticated patient",
+            description = "Returns all records for the patient from the JWT, optionally filtered by measuredAt range."
     )
     @ApiResponses({
             @ApiResponse(
@@ -154,7 +157,7 @@ public class GlucoseRecordController {
                                     [
                                       {
                                         "id": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                        "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                        "patientId": 1,
                                         "glucoseValue": 245.5,
                                         "minimumRange": 70,
                                         "maximumRange": 180,
@@ -170,15 +173,14 @@ public class GlucoseRecordController {
     })
     @GetMapping
     public ResponseEntity<List<GlucoseRecordResource>> findByPatientId(
-            @Parameter(description = "Patient identifier", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @RequestParam UUID patientId,
             @Parameter(description = "Inclusive lower bound for measuredAt", example = "2026-06-13T00:00:00")
             @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "Inclusive upper bound for measuredAt", example = "2026-06-13T23:59:59")
             @RequestParam(required = false) LocalDateTime to) {
+        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         var records = (from != null && to != null)
-                ? queryService.findByPatientIdAndMeasuredAtBetween(PatientId.of(patientId), from, to)
-                : queryService.findByPatientId(PatientId.of(patientId));
+                ? queryService.findByPatientIdAndMeasuredAtBetween(patientId, from, to)
+                : queryService.findByPatientId(patientId);
         return ResponseEntity.ok(records.stream().map(GlucoseRecordResource::fromDomain).toList());
     }
 
@@ -196,7 +198,7 @@ public class GlucoseRecordController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "glucoseValue": 128.0,
                                       "minimumRange": 70,
                                       "maximumRange": 180,

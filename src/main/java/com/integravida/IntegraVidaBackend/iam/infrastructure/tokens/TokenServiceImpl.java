@@ -19,7 +19,7 @@ public class TokenServiceImpl implements TokenService {
     private final long expirationTime = 86400000;
 
     @Override
-    public String generateToken(String username, Long userId, String role, Long profileId, Long patientId, Long doctorId) {
+    public String generateToken(String username, Long userId, String role, String profileId, String patientId, String doctorId) {
         Map<String, Object> claims = new HashMap<>();
 
         claims.put("userId", userId);
@@ -54,18 +54,18 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public Long extractProfileId(String token) {
-        return extractClaim(token, claims -> claims.get("profileId", Long.class));
+    public String extractProfileId(String token) {
+        return extractClaim(token, claims -> claims.get("profileId", String.class));
     }
 
     @Override
-    public Long extractPatientId(String token) {
-        return extractClaim(token, claims -> claims.get("patientId", Long.class));
+    public String extractPatientId(String token) {
+        return extractClaim(token, claims -> claims.get("patientId", String.class));
     }
 
     @Override
-    public Long extractDoctorId(String token) {
-        return extractClaim(token, claims -> claims.get("doctorId", Long.class));
+    public String extractDoctorId(String token) {
+        return extractClaim(token, claims -> claims.get("doctorId", String.class));
     }
 
     @Override

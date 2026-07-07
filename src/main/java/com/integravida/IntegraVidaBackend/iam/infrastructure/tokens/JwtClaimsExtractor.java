@@ -24,7 +24,11 @@ public class JwtClaimsExtractor {
     }
 
     public Long extractUserId() {
-        return getLongClaim("userId");
+        Map<String, Object> claims = getClaims();
+        if (claims == null || claims.get("userId") == null) return null;
+        Object value = claims.get("userId");
+        if (value instanceof Number) return ((Number) value).longValue();
+        return Long.valueOf(value.toString());
     }
 
     public String extractRole() {
@@ -32,27 +36,23 @@ public class JwtClaimsExtractor {
         return claims != null ? (String) claims.get("role") : null;
     }
 
-    public Long extractProfileId() {
-        return getLongClaim("profileId");
+    public String extractProfileId() {
+        return getStringClaim("profileId");
     }
 
-    public Long extractPatientId() {
-        return getLongClaim("patientId");
+    public String extractPatientId() {
+        return getStringClaim("patientId");
     }
 
-    public Long extractDoctorId() {
-        return getLongClaim("doctorId");
+    public String extractDoctorId() {
+        return getStringClaim("doctorId");
     }
 
-    private Long getLongClaim(String key) {
+    private String getStringClaim(String key) {
         Map<String, Object> claims = getClaims();
         if (claims == null || claims.get(key) == null) {
             return null;
         }
-        Object value = claims.get(key);
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return Long.valueOf(value.toString());
+        return claims.get(key).toString();
     }
 }

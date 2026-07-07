@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.monitoring.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.AlertCommandService;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.AlertQueryService;
 import com.integravida.IntegraVidaBackend.monitoring.domain.model.valueobjects.PatientId;
@@ -32,10 +33,12 @@ import java.util.UUID;
 public class AlertController {
     private final AlertCommandService commandService;
     private final AlertQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
-    public AlertController(AlertCommandService commandService, AlertQueryService queryService) {
+    public AlertController(AlertCommandService commandService, AlertQueryService queryService, JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
     @Operation(summary = "Get an alert by id", description = "Returns the details of a single alert.")
@@ -50,7 +53,7 @@ public class AlertController {
                                     {
                                       "id": "7fda5e8f-35b8-4e8d-8d1f-40d7f9f0a111",
                                       "glucoseRecordId": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "glucoseValue": 245.5,
                                       "severity": "CRITICAL",
                                       "message": "Glucose value 245.5 is outside the target range [70, 180]",
@@ -73,7 +76,7 @@ public class AlertController {
                 HttpStatus.OK);
     }
 
-    @Operation(summary = "List alerts for a patient", description = "Returns all alerts for a patient, optionally filtered to unread alerts only.")
+    @Operation(summary = "List alerts for the authenticated patient", description = "Returns all alerts for the patient from the JWT, optionally filtered to unread alerts only.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -86,7 +89,7 @@ public class AlertController {
                                       {
                                         "id": "7fda5e8f-35b8-4e8d-8d1f-40d7f9f0a111",
                                         "glucoseRecordId": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                        "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                        "patientId": 1,
                                         "glucoseValue": 245.5,
                                         "severity": "CRITICAL",
                                         "message": "Glucose value 245.5 is outside the target range [70, 180]",
@@ -101,13 +104,12 @@ public class AlertController {
     })
     @GetMapping
     public ResponseEntity<List<AlertResource>> findByPatientId(
-            @Parameter(description = "Patient identifier", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @RequestParam UUID patientId,
             @Parameter(description = "When true, returns only unread alerts", example = "false")
             @RequestParam(required = false, defaultValue = "false") boolean unreadOnly) {
+        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         var alerts = unreadOnly
-                ? queryService.findUnreadByPatientId(PatientId.of(patientId))
-                : queryService.findByPatientId(PatientId.of(patientId));
+                ? queryService.findUnreadByPatientId(patientId)
+                : queryService.findByPatientId(patientId);
         return ResponseEntity.ok(alerts.stream().map(AlertResource::fromDomain).toList());
     }
 
@@ -123,7 +125,7 @@ public class AlertController {
                                     {
                                       "id": "7fda5e8f-35b8-4e8d-8d1f-40d7f9f0a111",
                                       "glucoseRecordId": "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "glucoseValue": 245.5,
                                       "severity": "CRITICAL",
                                       "message": "Glucose value 245.5 is outside the target range [70, 180]",

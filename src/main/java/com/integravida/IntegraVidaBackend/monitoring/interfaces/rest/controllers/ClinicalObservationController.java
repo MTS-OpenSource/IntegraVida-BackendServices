@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.monitoring.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.ClinicalObservationCommandService;
 import com.integravida.IntegraVidaBackend.monitoring.application.services.ClinicalObservationQueryService;
 import com.integravida.IntegraVidaBackend.monitoring.domain.model.valueobjects.PatientId;
@@ -27,7 +28,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,13 +39,15 @@ import java.util.UUID;
 public class ClinicalObservationController {
     private final ClinicalObservationCommandService commandService;
     private final ClinicalObservationQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
-    public ClinicalObservationController(ClinicalObservationCommandService commandService, ClinicalObservationQueryService queryService) {
+    public ClinicalObservationController(ClinicalObservationCommandService commandService, ClinicalObservationQueryService queryService, JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
-    @Operation(summary = "Create a clinical observation", description = "Stores a clinical note or structured observation for a patient.")
+    @Operation(summary = "Create a clinical observation", description = "Stores a clinical note or structured observation for the authenticated patient.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -56,7 +58,7 @@ public class ClinicalObservationController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "category": "note",
                                       "title": "Post-meal review",
                                       "content": "Patient reported dizziness after lunch.",
@@ -81,7 +83,6 @@ public class ClinicalObservationController {
                             schema = @Schema(implementation = CreateClinicalObservationRequest.class),
                             examples = @ExampleObject(value = """
                                     {
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
                                       "category": "note",
                                       "title": "Post-meal review",
                                       "content": "Patient reported dizziness after lunch.",
@@ -91,8 +92,9 @@ public class ClinicalObservationController {
                     )
             )
             @RequestBody CreateClinicalObservationRequest request) {
+        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(PatientId.of(request.patientId()), request.category(), request.title(), request.content(), request.observedAt()),
+                commandService.create(patientId, request.category(), request.title(), request.content(), request.observedAt()),
                 ClinicalObservationResource::fromDomain,
                 HttpStatus.CREATED);
     }
@@ -108,7 +110,7 @@ public class ClinicalObservationController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "category": "note",
                                       "title": "Post-meal review",
                                       "content": "Patient reported dizziness after lunch.",
@@ -131,7 +133,7 @@ public class ClinicalObservationController {
                 HttpStatus.OK);
     }
 
-    @Operation(summary = "List clinical observations by patient", description = "Returns all observations associated with a patient.")
+    @Operation(summary = "List clinical observations for the authenticated patient", description = "Returns all observations for the patient from the JWT.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -143,7 +145,7 @@ public class ClinicalObservationController {
                                     [
                                       {
                                         "id": "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501",
-                                        "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                        "patientId": 1,
                                         "category": "note",
                                         "title": "Post-meal review",
                                         "content": "Patient reported dizziness after lunch.",
@@ -157,10 +159,9 @@ public class ClinicalObservationController {
             )
     })
     @GetMapping
-    public ResponseEntity<List<ClinicalObservationResource>> findByPatientId(
-            @Parameter(description = "Patient identifier", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @RequestParam UUID patientId) {
-        var observations = queryService.findByPatientId(PatientId.of(patientId));
+    public ResponseEntity<List<ClinicalObservationResource>> findByPatientId() {
+        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+        var observations = queryService.findByPatientId(patientId);
         return ResponseEntity.ok(observations.stream().map(ClinicalObservationResource::fromDomain).toList());
     }
 
@@ -175,7 +176,7 @@ public class ClinicalObservationController {
                             examples = @ExampleObject(value = """
                                     {
                                       "id": "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501",
-                                      "patientId": "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101",
+                                      "patientId": 1,
                                       "category": "report",
                                       "title": "Updated review",
                                       "content": "Updated clinical summary.",
