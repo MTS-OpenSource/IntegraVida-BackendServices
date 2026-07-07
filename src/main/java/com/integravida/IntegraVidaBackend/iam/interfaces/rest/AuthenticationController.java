@@ -7,8 +7,11 @@ import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.TokenService
 import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.SignInResource;
 import com.integravida.IntegraVidaBackend.iam.interfaces.rest.resources.SignUpResource;
+import com.integravida.IntegraVidaBackend.patients.application.services.DoctorCommandService;
+import com.integravida.IntegraVidaBackend.patients.application.services.DoctorQueryService;
 import com.integravida.IntegraVidaBackend.patients.application.services.PatientCommandService;
 import com.integravida.IntegraVidaBackend.patients.application.services.PatientQueryService;
+import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Doctor;
 import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Patient;
 import com.integravida.IntegraVidaBackend.profiles.application.services.ProfileCommandService;
 import com.integravida.IntegraVidaBackend.profiles.application.services.ProfileQueryService;
@@ -35,19 +38,25 @@ public class AuthenticationController {
     private final ProfileQueryService profileQueryService;
     private final PatientCommandService patientCommandService;
     private final PatientQueryService patientQueryService;
+    private final DoctorCommandService doctorCommandService;
+    private final DoctorQueryService doctorQueryService;
 
     public AuthenticationController(UserCommandServiceImpl userCommandService,
                                     TokenService tokenService,
                                     ProfileCommandService profileCommandService,
                                     ProfileQueryService profileQueryService,
                                     PatientCommandService patientCommandService,
-                                    PatientQueryService patientQueryService) {
+                                    PatientQueryService patientQueryService,
+                                    DoctorCommandService doctorCommandService,
+                                    DoctorQueryService doctorQueryService) {
         this.userCommandService = userCommandService;
         this.tokenService = tokenService;
         this.profileCommandService = profileCommandService;
         this.profileQueryService = profileQueryService;
         this.patientCommandService = patientCommandService;
         this.patientQueryService = patientQueryService;
+        this.doctorCommandService = doctorCommandService;
+        this.doctorQueryService = doctorQueryService;
     }
 
     @Operation(summary = "Registrar un nuevo usuario (Sign-Up)", description = "Crea un usuario, su perfil y paciente (si el rol es PATIENT), y emite el token.")
@@ -92,13 +101,28 @@ public class AuthenticationController {
             patientId = patientResult.toOptional().orElseThrow().getId().value().toString();
         }
 
+        String doctorId = null;
+        if (requestedRole == Roles.DOCTOR) {
+            String doctorRecordNumber = "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            Result<Doctor, ApplicationError> doctorResult = doctorCommandService.create(
+                    profile.getId(),
+                    doctorRecordNumber,
+                    "Doctor created during sign-up");
+
+            if (doctorResult instanceof Result.Failure<Doctor, ApplicationError> failure) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(failure.error().message());
+            }
+
+            doctorId = doctorResult.toOptional().orElseThrow().getId().value().toString();
+        }
+
         String token = tokenService.generateToken(
                 newUser.getUsername().username(),
                 newUser.getId(),
                 newUser.getRole().name(),
                 profileId,
                 patientId,
-                null);
+                doctorId);
 
         return new ResponseEntity<>(new AuthenticatedUserResource(String.valueOf(newUser.getId()), token), HttpStatus.CREATED);
     }
@@ -132,13 +156,21 @@ public class AuthenticationController {
             }
         }
 
+        String doctorId = null;
+        if (user.getRole() == Roles.DOCTOR) {
+            Result<Doctor, ApplicationError> doctorResult = doctorQueryService.getByProfileId(profile.getId());
+            if (doctorResult instanceof Result.Success<Doctor, ApplicationError>) {
+                doctorId = doctorResult.toOptional().orElseThrow().getId().value().toString();
+            }
+        }
+
         String token = tokenService.generateToken(
                 user.getUsername().username(),
                 user.getId(),
                 user.getRole().name(),
                 profileId,
                 patientId,
-                null);
+                doctorId);
 
         return ResponseEntity.ok(new AuthenticatedUserResource(String.valueOf(user.getId()), token));
     }

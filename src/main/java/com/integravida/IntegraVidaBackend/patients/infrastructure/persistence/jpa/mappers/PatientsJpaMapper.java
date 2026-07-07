@@ -1,14 +1,19 @@
 package com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.mappers;
 
+import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Doctor;
 import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Medication;
 import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.MedicationIntake;
 import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Patient;
+import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.PatientDoctor;
 import com.integravida.IntegraVidaBackend.patients.domain.model.aggregates.Treatment;
+import com.integravida.IntegraVidaBackend.patients.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.patients.domain.model.valueobjects.MedicationSchedule;
 import com.integravida.IntegraVidaBackend.patients.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.patients.domain.model.valueobjects.TreatmentStatus;
+import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.DoctorEntity;
 import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.MedicationEntity;
 import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.MedicationIntakeEntity;
+import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.PatientDoctorEntity;
 import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.PatientEntity;
 import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.entities.TreatmentEntity;
 
@@ -124,6 +129,46 @@ public final class PatientsJpaMapper {
         entity.setTakenAt(domain.getTakenAt());
         entity.setNotes(domain.getNotes());
         entity.setCreatedAt(domain.getCreatedAt());
+        return entity;
+    }
+
+    public static Doctor toDomain(DoctorEntity entity) {
+        return Doctor.reconstitute(
+                DoctorId.of(entity.getId()),
+                entity.getProfileId(),
+                entity.getDoctorRecordNumber(),
+                entity.getNotes(),
+                entity.isActive(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt());
+    }
+
+    public static DoctorEntity toEntity(Doctor domain) {
+        var entity = new DoctorEntity();
+        entity.setId(domain.getId().value());
+        entity.setProfileId(domain.getProfileId());
+        entity.setDoctorRecordNumber(domain.getDoctorRecordNumber());
+        entity.setNotes(domain.getNotes());
+        entity.setActive(domain.isActive());
+        entity.setCreatedAt(domain.getCreatedAt());
+        entity.setUpdatedAt(domain.getUpdatedAt());
+        return entity;
+    }
+
+    public static PatientDoctor toDomain(PatientDoctorEntity entity) {
+        return new PatientDoctor(
+                entity.getId(),
+                entity.getPatientId(),
+                entity.getDoctorId(),
+                entity.getAssignedAt());
+    }
+
+    public static PatientDoctorEntity toEntity(PatientDoctor domain) {
+        var entity = new PatientDoctorEntity();
+        entity.setId(domain.getId());
+        entity.setPatientId(domain.getPatientId());
+        entity.setDoctorId(domain.getDoctorId());
+        entity.setAssignedAt(domain.getAssignedAt());
         return entity;
     }
 

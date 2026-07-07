@@ -70,6 +70,24 @@ CREATE TABLE medication_intake_entity (
     created_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE doctor_entity (
+    id UUID PRIMARY KEY,
+    profile_id UUID NOT NULL UNIQUE,
+    doctor_record_number VARCHAR(255) NOT NULL UNIQUE,
+    notes TEXT NOT NULL,
+    active BOOLEAN NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE patient_doctor (
+    id UUID PRIMARY KEY,
+    patient_id UUID NOT NULL,
+    doctor_id UUID NOT NULL,
+    assigned_at TIMESTAMP NOT NULL,
+    UNIQUE (patient_id, doctor_id)
+);
+
 -- Seed profile referenced by the patient below.
 INSERT INTO profiles (
     id, first_name, last_name, email, phone_number, date_of_birth, created_at, updated_at
@@ -136,6 +154,19 @@ INSERT INTO medication_intake_entity (
     '22222222-2222-2222-2222-222222222222',
     NOW(),
     'Seed medication intake for development',
+    NOW()
+);
+
+-- Seed doctor UUID you can use in Swagger.
+INSERT INTO doctor_entity (
+    id, profile_id, doctor_record_number, notes, active, created_at, updated_at
+) VALUES (
+    '66666666-6666-6666-6666-666666666666',
+    '11111111-1111-1111-1111-111111111111',
+    'DOC-000001',
+    'Seed doctor for development',
+    TRUE,
+    NOW(),
     NOW()
 );
 
