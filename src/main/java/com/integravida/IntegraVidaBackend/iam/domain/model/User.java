@@ -25,7 +25,10 @@ public class User extends AbstractDomainAggregateRoot<User> {
     @Embedded
     private Password password;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Convert(converter = RoleConverter.class)
     @Column(nullable = false, length = 50)
     private Roles role;
 
@@ -41,22 +44,23 @@ public class User extends AbstractDomainAggregateRoot<User> {
         // Default constructor for JPA
     }
 
-    public User(Username username, Password password, Roles role) {
+    public User(Username username, Password password, String email, Roles role) {
         this.username = username;
         this.password = password;
+        this.email = email;
         this.role = role;
     }
 
-    public User(String username, String password, Roles role) {
-        this(new Username(username), new Password(password), role);
+    public User(String username, String password, String email, Roles role) {
+        this(new Username(username), new Password(password), email, role);
     }
 
-    public static User createPatient(String username, String password) {
-        return new User(username, password, Roles.PATIENT);
+    public static User createPatient(String username, String password, String email) {
+        return new User(username, password, email, Roles.PATIENT);
     }
 
-    public static User createDoctor(String username, String password) {
-        return new User(username, password, Roles.DOCTOR);
+    public static User createDoctor(String username, String password, String email) {
+        return new User(username, password, email, Roles.DOCTOR);
     }
 
     public Long getId() {
@@ -69,6 +73,10 @@ public class User extends AbstractDomainAggregateRoot<User> {
 
     public Password getPassword() {
         return password;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public Roles getRole() {

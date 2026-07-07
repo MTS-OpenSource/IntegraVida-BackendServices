@@ -24,7 +24,7 @@ public class UserCommandServiceImpl {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Result<User, ApplicationError> signUp(String rawUsername, String rawPassword, Roles role) {
+    public Result<User, ApplicationError> signUp(String rawUsername, String rawPassword, String email, Roles role) {
         var usernameVO = new Username(rawUsername);
 
         if (userRepository.existsByUsername(usernameVO)) {
@@ -35,9 +35,9 @@ public class UserCommandServiceImpl {
 
         User user;
         if (role == Roles.PATIENT) {
-            user = User.createPatient(rawUsername, encodedPassword);
+            user = User.createPatient(rawUsername, encodedPassword, email);
         } else if (role == Roles.DOCTOR) {
-            user = User.createDoctor(rawUsername, encodedPassword);
+            user = User.createDoctor(rawUsername, encodedPassword, email);
         } else {
             return Result.failure(ApplicationError.validationError("role", "invalid user role"));
         }

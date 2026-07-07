@@ -33,7 +33,7 @@ public class AuthenticationController {
     @PostMapping("/sign-up")
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpResource resource) {
         Roles requestedRole = Roles.valueOf(resource.role().toUpperCase());
-        Result<User, ApplicationError> result = userCommandService.signUp(resource.username(), resource.password(), requestedRole);
+        Result<User, ApplicationError> result = userCommandService.signUp(resource.username(), resource.password(), resource.email(), requestedRole);
 
         if (result instanceof Result.Failure<User, ApplicationError> failure) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(failure.error().message());
