@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.patients.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.patients.application.services.MedicationCommandService;
 import com.integravida.IntegraVidaBackend.patients.application.services.MedicationQueryService;
 import com.integravida.IntegraVidaBackend.patients.domain.model.valueobjects.MedicationSchedule;
@@ -28,11 +29,14 @@ import java.util.UUID;
 public class MedicationsController {
     private final MedicationCommandService commandService;
     private final MedicationQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
     public MedicationsController(MedicationCommandService commandService,
-                                 MedicationQueryService queryService) {
+                                 MedicationQueryService queryService,
+                                 JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
     @Operation(summary = "Create medication", description = "Creates a medication linked to a treatment.")
@@ -62,14 +66,15 @@ public class MedicationsController {
     )
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateMedicationRequest request) {
+        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
         var schedule = MedicationSchedule.of(request.daysOfWeek(), request.doseTimes(), request.instructions());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(request.patientId(), request.treatmentId(), request.name(), request.dosage(), schedule),
+                commandService.create(patientId, request.treatmentId(), request.name(), request.dosage(), schedule),
                 MedicationResource::fromDomain,
                 HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Get medications", description = "Returns all medications or filters by patient/treatment UUID.")
+    @Operation(summary = "Get medications", description = "Returns medications for the authenticated patient, optionally filtered by treatment.")
     @ApiResponse(
             responseCode = "200",
             description = "Medications found",
@@ -98,19 +103,16 @@ public class MedicationsController {
     )
     @GetMapping
     public ResponseEntity<?> getAll(
-            @Parameter(description = "Optional patient UUID", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @RequestParam(required = false) UUID patientId,
             @Parameter(description = "Optional treatment UUID", example = "2b2f7f3f-3d8a-4e6d-9c55-2f4f5b6c7d8e")
             @RequestParam(required = false) UUID treatmentId) {
-        if (patientId != null) {
-            List<MedicationResource> resources = queryService.getByPatientId(patientId).stream().map(MedicationResource::fromDomain).toList();
-            return ResponseEntity.ok(resources);
-        }
+        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
         if (treatmentId != null) {
-            List<MedicationResource> resources = queryService.getByTreatmentId(treatmentId).stream().map(MedicationResource::fromDomain).toList();
+            List<MedicationResource> resources = queryService.getByTreatmentId(treatmentId).stream()
+                    .filter(m -> m.getPatientId().value().equals(patientId))
+                    .map(MedicationResource::fromDomain).toList();
             return ResponseEntity.ok(resources);
         }
-        List<MedicationResource> resources = queryService.getAll().stream().map(MedicationResource::fromDomain).toList();
+        List<MedicationResource> resources = queryService.getByPatientId(patientId).stream().map(MedicationResource::fromDomain).toList();
         return ResponseEntity.ok(resources);
     }
 

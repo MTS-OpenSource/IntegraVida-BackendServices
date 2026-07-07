@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.patients.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.patients.application.services.TreatmentCommandService;
 import com.integravida.IntegraVidaBackend.patients.application.services.TreatmentQueryService;
 import com.integravida.IntegraVidaBackend.patients.interfaces.rest.resources.CreateTreatmentRequest;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,14 +35,17 @@ import java.util.UUID;
 public class TreatmentsController {
     private final TreatmentCommandService commandService;
     private final TreatmentQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
     public TreatmentsController(TreatmentCommandService commandService,
-                                TreatmentQueryService queryService) {
+                                TreatmentQueryService queryService,
+                                JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
-    @Operation(summary = "Create a treatment", description = "Creates a treatment for a patient.")
+    @Operation(summary = "Create a treatment", description = "Creates a treatment for the authenticated patient.")
     @ApiResponse(
             responseCode = "201",
             description = "Treatment created",
@@ -66,13 +69,14 @@ public class TreatmentsController {
     )
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateTreatmentRequest request) {
+        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(request.patientId(), request.name(), request.description(), request.startDate(), request.endDate()),
+                commandService.create(patientId, request.name(), request.description(), request.startDate(), request.endDate()),
                 TreatmentResource::fromDomain,
                 HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Get treatments", description = "Returns all treatments or treatments by patient UUID.")
+    @Operation(summary = "Get treatments", description = "Returns treatments for the authenticated patient.")
     @ApiResponse(
             responseCode = "200",
             description = "Treatments found",
@@ -97,14 +101,9 @@ public class TreatmentsController {
             )
     )
     @GetMapping
-    public ResponseEntity<?> getAll(
-            @Parameter(description = "Optional patient UUID", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @RequestParam(required = false) UUID patientId) {
-        if (patientId != null) {
-            List<TreatmentResource> resources = queryService.getByPatientId(patientId).stream().map(TreatmentResource::fromDomain).toList();
-            return ResponseEntity.ok(resources);
-        }
-        List<TreatmentResource> resources = queryService.getAll().stream().map(TreatmentResource::fromDomain).toList();
+    public ResponseEntity<?> getAll() {
+        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
+        List<TreatmentResource> resources = queryService.getByPatientId(patientId).stream().map(TreatmentResource::fromDomain).toList();
         return ResponseEntity.ok(resources);
     }
 
@@ -124,16 +123,15 @@ public class TreatmentsController {
                 HttpStatus.OK);
     }
 
-    @Operation(summary = "Get active treatment by patient", description = "Returns the active treatment for a patient UUID.")
+    @Operation(summary = "Get active treatment", description = "Returns the active treatment for the authenticated patient.")
     @ApiResponse(
             responseCode = "200",
             description = "Active treatment found",
             content = @Content(schema = @Schema(implementation = TreatmentResource.class))
     )
-    @GetMapping("/active/{patientId}")
-    public ResponseEntity<?> getActiveByPatientId(
-            @Parameter(description = "Patient UUID", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @PathVariable UUID patientId) {
+    @GetMapping("/active")
+    public ResponseEntity<?> getActive() {
+        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 queryService.getActiveByPatientId(patientId),
                 TreatmentResource::fromDomain,

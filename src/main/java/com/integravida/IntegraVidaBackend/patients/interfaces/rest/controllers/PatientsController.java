@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.patients.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.patients.application.ports.outbound.ExternalProfileService;
 import com.integravida.IntegraVidaBackend.patients.application.services.PatientCommandService;
 import com.integravida.IntegraVidaBackend.patients.application.services.PatientQueryService;
@@ -38,16 +39,19 @@ public class PatientsController {
     private final PatientCommandService commandService;
     private final PatientQueryService queryService;
     private final ExternalProfileService externalProfileService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
     public PatientsController(PatientCommandService commandService,
                               PatientQueryService queryService,
-                              ExternalProfileService externalProfileService) {
+                              ExternalProfileService externalProfileService,
+                              JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.externalProfileService = externalProfileService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
-    @Operation(summary = "Create a patient", description = "Creates a patient linked to a profile.")
+    @Operation(summary = "Create a patient", description = "Creates a patient linked to the authenticated profile.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -74,8 +78,9 @@ public class PatientsController {
     })
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreatePatientRequest request) {
+        UUID profileId = UUID.fromString(jwtClaimsExtractor.extractProfileId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(request.profileId(), request.medicalRecordNumber(), request.notes()),
+                commandService.create(profileId, request.medicalRecordNumber(), request.notes()),
                 this::toResource,
                 HttpStatus.CREATED);
     }
@@ -132,7 +137,7 @@ public class PatientsController {
                 HttpStatus.OK);
     }
 
-    @Operation(summary = "Get patient by profile id", description = "Returns a patient using the linked profile UUID.")
+    @Operation(summary = "Get patient by profile id", description = "Returns the patient linked to the authenticated profile.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -144,10 +149,9 @@ public class PatientsController {
             ),
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
-    @GetMapping("/by-profile/{profileId}")
-    public ResponseEntity<?> getByProfileId(
-            @Parameter(description = "Profile UUID", example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
-            @PathVariable UUID profileId) {
+    @GetMapping("/by-profile")
+    public ResponseEntity<?> getByProfileId() {
+        UUID profileId = UUID.fromString(jwtClaimsExtractor.extractProfileId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 queryService.getByProfileId(profileId),
                 this::toResource,
