@@ -2,7 +2,7 @@ package com.integravida.IntegraVidaBackend.medical.interfaces.rest.controllers;
 
 import com.integravida.IntegraVidaBackend.medical.application.services.ClinicalReportCommandService;
 import com.integravida.IntegraVidaBackend.medical.application.services.ClinicalReportQueryService;
-import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
+
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.ClinicalReportResource;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.CreateClinicalReportRequest;
@@ -75,8 +75,6 @@ public class ClinicalReportController {
     public ResponseEntity<?> create(@Valid @RequestBody CreateClinicalReportRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(
-                        PatientId.of(request.patientId()),
-                        DoctorId.of(request.doctorId()),
                         request.title(),
                         request.summary(),
                         request.recommendations()),
