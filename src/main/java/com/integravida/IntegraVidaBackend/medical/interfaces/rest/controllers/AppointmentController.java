@@ -2,7 +2,7 @@ package com.integravida.IntegraVidaBackend.medical.interfaces.rest.controllers;
 
 import com.integravida.IntegraVidaBackend.medical.application.services.AppointmentCommandService;
 import com.integravida.IntegraVidaBackend.medical.application.services.AppointmentQueryService;
-import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
+
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.AppointmentResource;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.CreateAppointmentRequest;
@@ -82,8 +82,6 @@ public class AppointmentController {
     public ResponseEntity<?> create(@Valid @RequestBody CreateAppointmentRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(
-                        PatientId.of(request.patientId()),
-                        DoctorId.of(request.doctorId()),
                         request.scheduledAt(),
                         request.reason()),
                 AppointmentResource::fromDomain,
