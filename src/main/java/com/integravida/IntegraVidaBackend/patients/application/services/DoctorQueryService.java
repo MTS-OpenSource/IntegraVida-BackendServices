@@ -25,6 +25,10 @@ public class DoctorQueryService {
         this.patientDoctorRepository = patientDoctorRepository;
     }
 
+    public List<Doctor> getAllDoctors() {
+        return doctorRepository.findAll();
+    }
+
     public Result<Doctor, ApplicationError> getByProfileId(UUID profileId) {
         return doctorRepository.findByProfileId(profileId)
                 .map(Result::<Doctor, ApplicationError>success)

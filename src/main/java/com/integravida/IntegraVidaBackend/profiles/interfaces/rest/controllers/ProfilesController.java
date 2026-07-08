@@ -1,5 +1,6 @@
 package com.integravida.IntegraVidaBackend.profiles.interfaces.rest.controllers;
 
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import com.integravida.IntegraVidaBackend.profiles.application.services.ProfileCommandService;
 import com.integravida.IntegraVidaBackend.profiles.application.services.ProfileQueryService;
 import com.integravida.IntegraVidaBackend.profiles.interfaces.rest.resources.CreateProfileRequest;
@@ -21,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @Tag(name = "Profiles", description = "User profile management endpoints")
 @RestController
@@ -29,11 +29,14 @@ import java.util.UUID;
 public class ProfilesController {
     private final ProfileCommandService commandService;
     private final ProfileQueryService   queryService;
+    private final JwtClaimsExtractor    jwtClaimsExtractor;
 
     public ProfilesController(ProfileCommandService commandService,
-                              ProfileQueryService queryService) {
+                              ProfileQueryService queryService,
+                              JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService   = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
     @Operation(summary = "Create a profile", description = "Creates a new user profile and publishes ProfileCreatedEvent.")
@@ -100,32 +103,32 @@ public class ProfilesController {
         return ResponseEntity.ok(profiles);
     }
 
-    @Operation(summary = "Get a profile by ID")
+    @Operation(summary = "Get my profile", description = "Returns the profile of the authenticated user.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Profile found"),
+        @ApiResponse(responseCode = "200", description = "Profile found",
+            content = @Content(schema = @Schema(implementation = ProfileResource.class))),
         @ApiResponse(responseCode = "404", description = "Profile not found")
     })
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(
-            @Parameter(description = "Profile UUID", example = "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
-            @PathVariable UUID id) {
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile() {
+        var profileId = java.util.UUID.fromString(jwtClaimsExtractor.extractProfileId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                queryService.getById(id),
+                queryService.getById(profileId),
                 ProfileResource::fromDomain,
                 HttpStatus.OK);
     }
 
-    @Operation(summary = "Update a profile")
+    @Operation(summary = "Update my profile", description = "Updates the profile of the authenticated user.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile updated"),
         @ApiResponse(responseCode = "404", description = "Profile not found")
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(
-            @Parameter(description = "Profile UUID") @PathVariable UUID id,
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMyProfile(
             @Valid @RequestBody UpdateProfileRequest request) {
+        var profileId = java.util.UUID.fromString(jwtClaimsExtractor.extractProfileId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.update(id, request.firstName(), request.lastName(),
+                commandService.update(profileId, request.firstName(), request.lastName(),
                         request.phoneNumber(), request.dateOfBirth()),
                 ProfileResource::fromDomain,
                 HttpStatus.OK);

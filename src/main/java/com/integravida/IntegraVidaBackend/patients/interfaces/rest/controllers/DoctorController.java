@@ -44,6 +44,22 @@ public class DoctorController {
         this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
+    @Operation(summary = "List all doctors", description = "Returns all registered doctors.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Doctors found",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = DoctorResource.class))
+            )
+    )
+    @GetMapping
+    public ResponseEntity<?> getAllDoctors() {
+        List<DoctorResource> resources = queryService.getAllDoctors()
+                .stream().map(DoctorResource::fromDomain).toList();
+        return ResponseEntity.ok(resources);
+    }
+
     @Operation(summary = "Create a doctor", description = "Creates a doctor linked to the authenticated profile.")
     @ApiResponse(
             responseCode = "201",
