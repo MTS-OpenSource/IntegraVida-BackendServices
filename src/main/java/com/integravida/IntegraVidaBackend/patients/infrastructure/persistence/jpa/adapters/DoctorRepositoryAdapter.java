@@ -7,6 +7,7 @@ import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jp
 import com.integravida.IntegraVidaBackend.patients.infrastructure.persistence.jpa.repositories.DoctorJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,6 +37,11 @@ public class DoctorRepositoryAdapter implements DoctorRepository {
     @Override
     public boolean existsByProfileId(UUID profileId) {
         return jpaRepository.existsByProfileId(profileId);
+    }
+
+    @Override
+    public List<Doctor> findAll() {
+        return jpaRepository.findAll().stream().map(PatientsJpaMapper::toDomain).toList();
     }
 
     @Override
