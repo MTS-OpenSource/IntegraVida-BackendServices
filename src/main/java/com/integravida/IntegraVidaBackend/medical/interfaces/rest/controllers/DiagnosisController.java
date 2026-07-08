@@ -2,7 +2,7 @@ package com.integravida.IntegraVidaBackend.medical.interfaces.rest.controllers;
 
 import com.integravida.IntegraVidaBackend.medical.application.services.DiagnosisCommandService;
 import com.integravida.IntegraVidaBackend.medical.application.services.DiagnosisQueryService;
-import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
+
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.CreateDiagnosisRequest;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.DiagnosisResource;
@@ -73,8 +73,6 @@ public class DiagnosisController {
     public ResponseEntity<?> create(@Valid @RequestBody CreateDiagnosisRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(
-                        PatientId.of(request.patientId()),
-                        DoctorId.of(request.doctorId()),
                         request.description(),
                         request.recommendation()),
                 DiagnosisResource::fromDomain,
