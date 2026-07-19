@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -64,12 +65,18 @@ public class MedicationsController {
                             """)
             )
     )
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody CreateMedicationRequest request) {
-        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
+    public ResponseEntity<?> create(
+            @Valid @RequestBody CreateMedicationRequest request,
+            @Parameter(description = "Patient UUID (required for ADMIN, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientId) {
+        UUID effectivePatientId = patientId != null
+                ? patientId
+                : UUID.fromString(jwtClaimsExtractor.extractPatientId());
         var schedule = MedicationSchedule.of(request.daysOfWeek(), request.doseTimes(), request.instructions());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.create(patientId, request.treatmentId(), request.name(), request.dosage(), schedule),
+                commandService.create(effectivePatientId, request.treatmentId(), request.name(), request.dosage(), schedule),
                 MedicationResource::fromDomain,
                 HttpStatus.CREATED);
     }
@@ -101,18 +108,23 @@ public class MedicationsController {
                             """)
             )
     )
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<?> getAll(
             @Parameter(description = "Optional treatment UUID", example = "2b2f7f3f-3d8a-4e6d-9c55-2f4f5b6c7d8e")
-            @RequestParam(required = false) UUID treatmentId) {
-        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
+            @RequestParam(required = false) UUID treatmentId,
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientId) {
+        UUID effectivePatientId = patientId != null
+                ? patientId
+                : UUID.fromString(jwtClaimsExtractor.extractPatientId());
         if (treatmentId != null) {
             List<MedicationResource> resources = queryService.getByTreatmentId(treatmentId).stream()
-                    .filter(m -> m.getPatientId().value().equals(patientId))
+                    .filter(m -> m.getPatientId().value().equals(effectivePatientId))
                     .map(MedicationResource::fromDomain).toList();
             return ResponseEntity.ok(resources);
         }
-        List<MedicationResource> resources = queryService.getByPatientId(patientId).stream().map(MedicationResource::fromDomain).toList();
+        List<MedicationResource> resources = queryService.getByPatientId(effectivePatientId).stream().map(MedicationResource::fromDomain).toList();
         return ResponseEntity.ok(resources);
     }
 
@@ -122,6 +134,7 @@ public class MedicationsController {
             description = "Medication found",
             content = @Content(schema = @Schema(implementation = MedicationResource.class))
     )
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Medication UUID", example = "8d7c1e3a-5aa2-4f65-9b6f-6e4d8d2b4c55")

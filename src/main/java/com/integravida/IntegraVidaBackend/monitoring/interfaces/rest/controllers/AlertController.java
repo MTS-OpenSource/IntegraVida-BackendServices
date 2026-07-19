@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,6 +67,7 @@ public class AlertController {
             ),
             @ApiResponse(responseCode = "404", description = "Alert not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Alert identifier", example = "7fda5e8f-35b8-4e8d-8d1f-40d7f9f0a111")
@@ -102,11 +104,16 @@ public class AlertController {
                     )
             )
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<AlertResource>> findByPatientId(
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam,
             @Parameter(description = "When true, returns only unread alerts", example = "false")
             @RequestParam(required = false, defaultValue = "false") boolean unreadOnly) {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         var alerts = unreadOnly
                 ? queryService.findUnreadByPatientId(patientId)
                 : queryService.findByPatientId(patientId);
@@ -138,6 +145,7 @@ public class AlertController {
             ),
             @ApiResponse(responseCode = "404", description = "Alert not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PatchMapping("/{id}/read")
     public ResponseEntity<?> markAsRead(
             @Parameter(description = "Alert identifier", example = "7fda5e8f-35b8-4e8d-8d1f-40d7f9f0a111")

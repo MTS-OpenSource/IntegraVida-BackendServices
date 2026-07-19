@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,6 +78,7 @@ public class PatientsController {
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
     @PostMapping
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     public ResponseEntity<?> create(@Valid @RequestBody CreatePatientRequest request) {
         UUID profileId = UUID.fromString(jwtClaimsExtractor.extractProfileId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
@@ -110,6 +112,7 @@ public class PatientsController {
             )
     )
     @GetMapping
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     public ResponseEntity<?> getAll() {
         List<PatientResource> resources = queryService.getAll().stream().map(this::toResource).toList();
         return ResponseEntity.ok(resources);
@@ -128,6 +131,7 @@ public class PatientsController {
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerDoctor(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     public ResponseEntity<?> getById(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")
             @PathVariable UUID id) {
@@ -149,6 +153,7 @@ public class PatientsController {
             ),
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping("/by-profile")
     public ResponseEntity<?> getByProfileId() {
         UUID profileId = UUID.fromString(jwtClaimsExtractor.extractProfileId());
@@ -171,6 +176,7 @@ public class PatientsController {
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerDoctor(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     public ResponseEntity<?> update(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")
             @PathVariable UUID id,
@@ -180,13 +186,13 @@ public class PatientsController {
                 this::toResource,
                 HttpStatus.OK);
     }
-
     @Operation(summary = "Deactivate patient", description = "Marks a patient as inactive.")
     @ApiResponse(
             responseCode = "200",
             description = "Patient deactivated",
             content = @Content(schema = @Schema(implementation = PatientResource.class))
     )
+    @PreAuthorize("hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<?> deactivate(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")
@@ -203,6 +209,7 @@ public class PatientsController {
             description = "Patient reactivated",
             content = @Content(schema = @Schema(implementation = PatientResource.class))
     )
+    @PreAuthorize("hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     @PatchMapping("/{id}/reactivate")
     public ResponseEntity<?> reactivate(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")

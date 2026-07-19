@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -71,6 +72,7 @@ public class ClinicalReportController {
             ),
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateClinicalReportRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
@@ -96,6 +98,7 @@ public class ClinicalReportController {
                     )
             )
     })
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<ClinicalReportResource>> getClinicalReports(
             @Parameter(

@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -72,6 +74,7 @@ public class ClinicalObservationController {
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> create(
             @Valid
@@ -91,8 +94,12 @@ public class ClinicalObservationController {
                                     """)
                     )
             )
-            @RequestBody CreateClinicalObservationRequest request) {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+            @RequestBody CreateClinicalObservationRequest request,
+            @Parameter(description = "Patient UUID (required for ADMIN, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam) {
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(patientId, request.category(), request.title(), request.content(), request.observedAt()),
                 ClinicalObservationResource::fromDomain,
@@ -123,6 +130,7 @@ public class ClinicalObservationController {
             ),
             @ApiResponse(responseCode = "404", description = "Clinical observation not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Clinical observation identifier", example = "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501")
@@ -158,9 +166,14 @@ public class ClinicalObservationController {
                     )
             )
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<ClinicalObservationResource>> findByPatientId() {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+    public ResponseEntity<List<ClinicalObservationResource>> findByPatientId(
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam) {
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         var observations = queryService.findByPatientId(patientId);
         return ResponseEntity.ok(observations.stream().map(ClinicalObservationResource::fromDomain).toList());
     }
@@ -190,6 +203,7 @@ public class ClinicalObservationController {
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "404", description = "Clinical observation not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @Parameter(description = "Clinical observation identifier", example = "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501")
@@ -235,6 +249,7 @@ public class ClinicalObservationController {
             ),
             @ApiResponse(responseCode = "404", description = "Clinical observation not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Clinical observation identifier", example = "5a3f2b11-47a6-4d8d-8f83-6f47d4f7e501")

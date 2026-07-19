@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -78,6 +79,7 @@ public class AppointmentController {
             ),
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateAppointmentRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
@@ -102,9 +104,10 @@ public class AppointmentController {
                     )
             )
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<AppointmentResource>> getAppointments(
-            @Parameter(description = "Patient identifier used to filter appointments",
+            @Parameter(description = "Patient identifier used to filter appointments. If not provided, returns all (ADMIN) or uses JWT patient (PATIENT).",
                     example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
             @RequestParam(required = false) UUID patientId) {
         var appointments = patientId == null
@@ -125,6 +128,7 @@ public class AppointmentController {
             @ApiResponse(responseCode = "200", description = "Appointment found"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Appointment identifier",
@@ -144,6 +148,7 @@ public class AppointmentController {
             @ApiResponse(responseCode = "200", description = "Appointment updated"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @Parameter(description = "Appointment identifier",
@@ -176,6 +181,7 @@ public class AppointmentController {
             ),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
+    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Appointment identifier",

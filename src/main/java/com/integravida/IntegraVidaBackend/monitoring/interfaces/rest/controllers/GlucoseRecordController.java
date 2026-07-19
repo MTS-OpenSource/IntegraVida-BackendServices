@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -79,6 +80,7 @@ public class GlucoseRecordController {
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> create(
             @Valid
@@ -96,8 +98,12 @@ public class GlucoseRecordController {
                                     """)
                     )
             )
-            @RequestBody CreateGlucoseRecordRequest request) {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+            @RequestBody CreateGlucoseRecordRequest request,
+            @Parameter(description = "Patient UUID (required for ADMIN, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam) {
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(patientId, GlucoseValue.of(request.glucoseValue()), request.measuredAt()),
                 GlucoseRecordResource::fromDomain,
@@ -132,6 +138,7 @@ public class GlucoseRecordController {
             ),
 
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Glucose record identifier", example = "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77")
@@ -171,13 +178,18 @@ public class GlucoseRecordController {
                     )
             )
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<GlucoseRecordResource>> findByPatientId(
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam,
             @Parameter(description = "Inclusive lower bound for measuredAt", example = "2026-06-13T00:00:00")
             @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "Inclusive upper bound for measuredAt", example = "2026-06-13T23:59:59")
             @RequestParam(required = false) LocalDateTime to) {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         var records = (from != null && to != null)
                 ? queryService.findByPatientIdAndMeasuredAtBetween(patientId, from, to)
                 : queryService.findByPatientId(patientId);
@@ -213,6 +225,7 @@ public class GlucoseRecordController {
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "404", description = "Glucose record not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @Parameter(description = "Glucose record identifier", example = "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77")
@@ -259,6 +272,7 @@ public class GlucoseRecordController {
             ),
             @ApiResponse(responseCode = "404", description = "Glucose record not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Glucose record identifier", example = "9f2f46d2-5c9b-4f8d-a937-df2f3a2b1b77")

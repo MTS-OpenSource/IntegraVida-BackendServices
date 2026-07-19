@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -89,6 +90,7 @@ public class ProfilesController {
             content = @Content(mediaType = "application/json",
                 array = @ArraySchema(schema = @Schema(implementation = ProfileResource.class))))
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<?> getProfiles(
             @Parameter(description = "Filter by email") @RequestParam(required = false) String email) {
@@ -109,6 +111,7 @@ public class ProfilesController {
             content = @Content(schema = @Schema(implementation = ProfileResource.class))),
         @ApiResponse(responseCode = "404", description = "Profile not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile() {
         var profileId = java.util.UUID.fromString(jwtClaimsExtractor.extractProfileId());
@@ -123,6 +126,7 @@ public class ProfilesController {
         @ApiResponse(responseCode = "200", description = "Profile updated"),
         @ApiResponse(responseCode = "404", description = "Profile not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     @PutMapping("/me")
     public ResponseEntity<?> updateMyProfile(
             @Valid @RequestBody UpdateProfileRequest request) {

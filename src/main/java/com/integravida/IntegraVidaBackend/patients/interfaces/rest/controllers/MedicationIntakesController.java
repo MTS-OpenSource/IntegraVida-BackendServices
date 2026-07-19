@@ -7,6 +7,7 @@ import com.integravida.IntegraVidaBackend.patients.interfaces.rest.resources.Cre
 import com.integravida.IntegraVidaBackend.patients.interfaces.rest.resources.MedicationIntakeResource;
 import com.integravida.IntegraVidaBackend.shared.interfaces.rest.transform.ResponseEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -16,10 +17,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -60,11 +63,17 @@ public class MedicationIntakesController {
                             """)
             )
     )
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody CreateMedicationIntakeRequest request) {
-        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
+    public ResponseEntity<?> create(
+            @Valid @RequestBody CreateMedicationIntakeRequest request,
+            @Parameter(description = "Patient UUID (required for ADMIN, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientId) {
+        UUID effectivePatientId = patientId != null
+                ? patientId
+                : UUID.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                commandService.register(request.medicationId(), patientId, request.takenAt(), request.notes()),
+                commandService.register(request.medicationId(), effectivePatientId, request.takenAt(), request.notes()),
                 MedicationIntakeResource::fromDomain,
                 HttpStatus.CREATED);
     }
@@ -78,10 +87,15 @@ public class MedicationIntakesController {
                     array = @ArraySchema(schema = @Schema(implementation = MedicationIntakeResource.class))
             )
     )
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getAll() {
-        UUID patientId = UUID.fromString(jwtClaimsExtractor.extractPatientId());
-        List<MedicationIntakeResource> resources = queryService.getByPatientId(patientId)
+    public ResponseEntity<?> getAll(
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientId) {
+        UUID effectivePatientId = patientId != null
+                ? patientId
+                : UUID.fromString(jwtClaimsExtractor.extractPatientId());
+        List<MedicationIntakeResource> resources = queryService.getByPatientId(effectivePatientId)
                 .stream().map(MedicationIntakeResource::fromDomain).toList();
         return ResponseEntity.ok(resources);
     }

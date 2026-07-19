@@ -9,6 +9,7 @@ import com.integravida.IntegraVidaBackend.monitoring.interfaces.rest.resources.G
 import com.integravida.IntegraVidaBackend.monitoring.interfaces.rest.resources.GlucoseRangeResource;
 import com.integravida.IntegraVidaBackend.shared.interfaces.rest.transform.ResponseEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,11 +19,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @Tag(name = "Monitoring - Glucose Ranges", description = "Personalized glucose target configuration")
 @RestController
@@ -61,9 +66,14 @@ public class GlucoseRangeController {
             ),
             @ApiResponse(responseCode = "404", description = "Glucose range not found")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getActive() {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+    public ResponseEntity<?> getActive(
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam) {
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 queryService.getActiveByPatientId(patientId),
                 GlucoseRangeResource::fromDomain,
@@ -93,6 +103,7 @@ public class GlucoseRangeController {
             ),
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
+    @PreAuthorize("hasRole('PATIENT') or hasRole('ADMIN')")
     @PutMapping
     public ResponseEntity<?> upsert(
             @Valid
@@ -110,8 +121,12 @@ public class GlucoseRangeController {
                                     """)
                     )
             )
-            @RequestBody GlucoseRangeRequest request) {
-        var patientId = PatientId.fromString(jwtClaimsExtractor.extractPatientId());
+            @RequestBody GlucoseRangeRequest request,
+            @Parameter(description = "Patient UUID (required for ADMIN/DOCTOR, optional for PATIENT)")
+            @RequestParam(required = false) UUID patientIdParam) {
+        var patientId = patientIdParam != null
+                ? PatientId.fromString(patientIdParam.toString())
+                : PatientId.fromString(jwtClaimsExtractor.extractPatientId());
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.upsert(patientId, GlucoseValue.of(request.minimumValue()), GlucoseValue.of(request.maximumValue())),
                 GlucoseRangeResource::fromDomain,
