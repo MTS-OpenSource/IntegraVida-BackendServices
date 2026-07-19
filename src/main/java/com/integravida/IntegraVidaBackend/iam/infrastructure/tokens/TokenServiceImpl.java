@@ -2,11 +2,12 @@ package com.integravida.IntegraVidaBackend.iam.infrastructure.tokens;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,8 +16,17 @@ import java.util.function.Function;
 @Service
 public class TokenServiceImpl implements TokenService {
 
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long expirationTime = 86400000;
+    private final Key secretKey;
+    private final long expirationTime;
+
+    public TokenServiceImpl(@Value("${security.jwt.secret}") String jwtSecret,
+                            @Value("${security.jwt.expiration-ms:86400000}") long expirationTime) {
+        if (jwtSecret == null || jwtSecret.length() < 32) {
+            throw new IllegalStateException("security.jwt.secret must be at least 32 characters long");
+        }
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        this.expirationTime = expirationTime;
+    }
 
     @Override
     public String generateToken(String username, Long userId, String role, String profileId, String patientId, String doctorId) {

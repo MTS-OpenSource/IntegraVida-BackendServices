@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -62,7 +63,18 @@ public class AuthenticationController {
     @Operation(summary = "Registrar un nuevo usuario (Sign-Up)", description = "Crea un usuario, su perfil y paciente (si el rol es PATIENT), y emite el token.")
     @PostMapping("/sign-up")
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpResource resource) {
-        Roles requestedRole = Roles.valueOf(resource.role().toUpperCase());
+        Roles requestedRole;
+        try {
+            requestedRole = Roles.valueOf(resource.role().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body("Rol inválido. Roles permitidos para registro público: PATIENT");
+        }
+
+        if (requestedRole != Roles.PATIENT) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("El registro público solo permite usuarios PATIENT");
+        }
+
         Result<User, ApplicationError> userResult = userCommandService.signUp(resource.username(), resource.password(), resource.email(), requestedRole);
 
         if (userResult instanceof Result.Failure<User, ApplicationError> failure) {

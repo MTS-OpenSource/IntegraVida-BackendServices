@@ -38,6 +38,8 @@ public class UserCommandServiceImpl {
             user = User.createPatient(rawUsername, encodedPassword, email);
         } else if (role == Roles.DOCTOR) {
             user = User.createDoctor(rawUsername, encodedPassword, email);
+        } else if (role == Roles.ADMIN) {
+            user = User.createAdmin(rawUsername, encodedPassword, email);
         } else {
             return Result.failure(ApplicationError.validationError("role", "invalid user role"));
         }

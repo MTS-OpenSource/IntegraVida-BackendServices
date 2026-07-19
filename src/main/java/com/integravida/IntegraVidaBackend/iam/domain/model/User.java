@@ -63,6 +63,10 @@ public class User extends AbstractDomainAggregateRoot<User> {
         return new User(username, password, email, Roles.DOCTOR);
     }
 
+    public static User createAdmin(String username, String password, String email) {
+        return new User(username, password, email, Roles.ADMIN);
+    }
+
     public Long getId() {
         return id;
     }
