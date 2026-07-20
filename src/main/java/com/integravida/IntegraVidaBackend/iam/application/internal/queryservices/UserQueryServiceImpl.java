@@ -8,6 +8,8 @@ import com.integravida.IntegraVidaBackend.shared.application.result.Result;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 public class UserQueryServiceImpl {
@@ -15,6 +17,10 @@ public class UserQueryServiceImpl {
 
     public UserQueryServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    public List<User> getAll() {
+        return userRepository.findAll();
     }
 
     public Result<User, ApplicationError> getByUsername(String rawUsername) {

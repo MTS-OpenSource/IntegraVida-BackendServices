@@ -12,5 +12,5 @@ public class IntegrateVidaBackendApplication {
 		System.out.println("USUARIO DETECTADO: " + System.getenv("SPRING_DATASOURCE_USERNAME"));
 		System.out.println("PASSWORD DETECTADA: " + System.getenv("SPRING_DATASOURCE_PASSWORD"));
 		SpringApplication.run(IntegrateVidaBackendApplication.class, args);
-	}
+	}+
 }

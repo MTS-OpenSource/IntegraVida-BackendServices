@@ -9,9 +9,15 @@ import java.util.UUID;
 public interface PatientDoctorRepository {
     PatientDoctor save(PatientDoctor patientDoctor);
 
+    List<PatientDoctor> findAll();
+
+    Optional<PatientDoctor> findById(UUID id);
+
     List<PatientDoctor> findByDoctorId(UUID doctorId);
 
     Optional<PatientDoctor> findByPatientId(UUID patientId);
 
     boolean existsByPatientIdAndDoctorId(UUID patientId, UUID doctorId);
+
+    void deleteById(UUID id);
 }
