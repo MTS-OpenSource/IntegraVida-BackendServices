@@ -9,8 +9,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 public class IntegrateVidaBackendApplication {
 
 	public static void main(String[] args) {
-		System.out.println("USUARIO DETECTADO: " + System.getenv("SPRING_DATASOURCE_USERNAME"));
-		System.out.println("PASSWORD DETECTADA: " + System.getenv("SPRING_DATASOURCE_PASSWORD"));
 		SpringApplication.run(IntegrateVidaBackendApplication.class, args);
-	}+
+	}
 }
