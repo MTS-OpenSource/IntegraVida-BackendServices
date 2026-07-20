@@ -50,8 +50,17 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.0.2</version>
-		</dependency>s de application.propertiesy permitir que Spring Boot hiciera el mapeo de Variable de entorno ( SPRING_DATASOURCE_URL) -> Propiedad ( spring.datasource.url) automáticamente. ¡Gracias!
-		<!-- https://mvnrepository.com/artifact/io.github.encryptorcode/pluralize -->
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.jdbc</groupId>
+			<artifactId>aws-advanced-jdbc-wrapper</artifactId>
+			<version>2.3.5</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>rds</artifactId>
+			<version>2.25.0</version>
+		</dependency>
 		<dependency>
 			<groupId>io.github.encryptorcode</groupId>
 			<artifactId>pluralize</artifactId>
