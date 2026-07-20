@@ -4,7 +4,9 @@ import com.integravida.IntegraVidaBackend.shared.application.result.ApplicationE
 import com.integravida.IntegraVidaBackend.shared.interfaces.rest.transform.ErrorResponseAssembler;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -63,6 +65,20 @@ public class GlobalExceptionHandler {
                 ex.getMessage() != null ? ex.getMessage() : resolveMessageOrDefault("validation.request.failed", "Request validation failed")
         );
         return ErrorResponseAssembler.toErrorResponseFromApplicationError(applicationError);
+    }
+
+    /**
+     * Handles AccessDeniedException from Spring Security @PreAuthorize.
+     * Returns 403 FORBIDDEN instead of 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                java.util.Map.of(
+                        "code", "FORBIDDEN",
+                        "message", "Access Denied",
+                        "details", ex.getMessage() != null ? ex.getMessage() : "You don't have permission to access this resource"
+                ));
     }
 
     /**

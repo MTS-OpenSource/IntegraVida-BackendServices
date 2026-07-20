@@ -24,6 +24,16 @@ public class PatientDoctorRepositoryAdapter implements PatientDoctorRepository {
     }
 
     @Override
+    public List<PatientDoctor> findAll() {
+        return jpaRepository.findAll().stream().map(PatientsJpaMapper::toDomain).toList();
+    }
+
+    @Override
+    public Optional<PatientDoctor> findById(UUID id) {
+        return jpaRepository.findById(id).map(PatientsJpaMapper::toDomain);
+    }
+
+    @Override
     public List<PatientDoctor> findByDoctorId(UUID doctorId) {
         return jpaRepository.findByDoctorId(doctorId).stream().map(PatientsJpaMapper::toDomain).toList();
     }
@@ -36,5 +46,10 @@ public class PatientDoctorRepositoryAdapter implements PatientDoctorRepository {
     @Override
     public boolean existsByPatientIdAndDoctorId(UUID patientId, UUID doctorId) {
         return jpaRepository.existsByPatientIdAndDoctorId(patientId, doctorId);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jpaRepository.deleteById(id);
     }
 }
