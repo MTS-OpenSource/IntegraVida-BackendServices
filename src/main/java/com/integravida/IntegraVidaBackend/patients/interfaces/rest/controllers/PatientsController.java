@@ -131,7 +131,7 @@ public class PatientsController {
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerDoctor(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerPatient(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     public ResponseEntity<?> getById(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")
             @PathVariable UUID id) {
@@ -176,7 +176,7 @@ public class PatientsController {
             @ApiResponse(responseCode = "404", description = "Patient not found")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerDoctor(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PATIENT') and @ownerShipService.isOwnerPatient(#id) or hasRole('DOCTOR') and @ownerShipService.isDoctorAssignedToPatient(#id) or hasRole('ADMIN')")
     public ResponseEntity<?> update(
             @Parameter(description = "Patient UUID", example = "5e4b5d6c-1c2d-4f0a-8b5c-7a6d9e0f1234")
             @PathVariable UUID id,
