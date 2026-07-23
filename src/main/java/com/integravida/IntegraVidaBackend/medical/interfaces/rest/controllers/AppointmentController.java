@@ -85,7 +85,7 @@ public class AppointmentController {
             @ApiResponse(responseCode = "400", description = "Invalid request"),
             @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateAppointmentRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(

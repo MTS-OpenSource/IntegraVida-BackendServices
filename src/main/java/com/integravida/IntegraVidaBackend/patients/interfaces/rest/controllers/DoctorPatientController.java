@@ -254,7 +254,7 @@ public class DoctorPatientController {
             @PathVariable UUID patientId,
             @Valid @RequestBody CreateAppointmentRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
-                appointmentCommandService.create(request.scheduledAt(), request.reason()),
+                appointmentCommandService.create(patientId, request.doctorId(), request.scheduledAt(), request.reason()),
                 AppointmentResource::fromDomain,
                 HttpStatus.CREATED);
     }
