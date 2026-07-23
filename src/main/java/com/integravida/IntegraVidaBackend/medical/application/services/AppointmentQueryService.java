@@ -2,6 +2,7 @@ package com.integravida.IntegraVidaBackend.medical.application.services;
 
 import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.AppointmentRepository;
 import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Appointment;
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.shared.application.result.ApplicationError;
 import com.integravida.IntegraVidaBackend.shared.application.result.Result;
@@ -31,5 +32,9 @@ public class AppointmentQueryService {
 
     public List<Appointment> findByPatientId(PatientId patientId) {
         return appointmentRepository.findByPatientId(patientId);
+    }
+
+    public List<Appointment> findByDoctorId(DoctorId doctorId) {
+        return appointmentRepository.findByDoctorId(doctorId);
     }
 }

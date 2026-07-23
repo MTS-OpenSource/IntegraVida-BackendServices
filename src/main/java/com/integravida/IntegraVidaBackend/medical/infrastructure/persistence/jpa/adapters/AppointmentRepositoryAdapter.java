@@ -2,6 +2,7 @@ package com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jp
 
 import com.integravida.IntegraVidaBackend.medical.application.ports.outbound.AppointmentRepository;
 import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Appointment;
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.mappers.MedicalJpaMapper;
 import com.integravida.IntegraVidaBackend.medical.infrastructure.persistence.jpa.repositories.AppointmentJpaRepository;
@@ -35,6 +36,14 @@ public class AppointmentRepositoryAdapter implements AppointmentRepository {
     @Override
     public List<Appointment> findByPatientId(PatientId patientId) {
         return appointmentJpaRepository.findAllByPatientIdOrderByScheduledAtDesc(patientId.value())
+                .stream()
+                .map(MedicalJpaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Appointment> findByDoctorId(DoctorId doctorId) {
+        return appointmentJpaRepository.findAllByDoctorIdOrderByScheduledAtDesc(doctorId.value())
                 .stream()
                 .map(MedicalJpaMapper::toDomain)
                 .toList();

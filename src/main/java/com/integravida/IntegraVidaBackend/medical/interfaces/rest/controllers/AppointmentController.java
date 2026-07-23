@@ -3,12 +3,14 @@ package com.integravida.IntegraVidaBackend.medical.interfaces.rest.controllers;
 import com.integravida.IntegraVidaBackend.medical.application.services.AppointmentCommandService;
 import com.integravida.IntegraVidaBackend.medical.application.services.AppointmentQueryService;
 
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.AppointmentResource;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.CreateAppointmentRequest;
 import com.integravida.IntegraVidaBackend.medical.interfaces.rest.resources.UpdateAppointmentRequest;
 import com.integravida.IntegraVidaBackend.shared.interfaces.rest.resources.MessageResource;
 import com.integravida.IntegraVidaBackend.shared.interfaces.rest.transform.ResponseEntityAssembler;
+import com.integravida.IntegraVidaBackend.iam.infrastructure.tokens.JwtClaimsExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -44,16 +46,19 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 public class AppointmentController {
     private final AppointmentCommandService commandService;
     private final AppointmentQueryService queryService;
+    private final JwtClaimsExtractor jwtClaimsExtractor;
 
     public AppointmentController(AppointmentCommandService commandService,
-                                 AppointmentQueryService queryService) {
+                                 AppointmentQueryService queryService,
+                                 JwtClaimsExtractor jwtClaimsExtractor) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.jwtClaimsExtractor = jwtClaimsExtractor;
     }
 
     @Operation(
             summary = "Create an appointment",
-            description = "Creates a new medical appointment for a patient and doctor."
+            description = "Creates a new medical appointment for a patient and doctor. Only accessible to Admin users."
     )
     @ApiResponses({
             @ApiResponse(
@@ -77,13 +82,16 @@ public class AppointmentController {
                                     """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "Invalid request")
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     })
-    @PreAuthorize("hasRole('DOCTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CreateAppointmentRequest request) {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 commandService.create(
+                        request.patientId(),
+                        request.doctorId(),
                         request.scheduledAt(),
                         request.reason()),
                 AppointmentResource::fromDomain,
@@ -92,7 +100,10 @@ public class AppointmentController {
 
     @Operation(
             summary = "Get appointments",
-            description = "Returns all appointments or filters them by patient identifier."
+            description = "Returns appointments based on the user role. " +
+                    "PATIENT users see only their own appointments. " +
+                    "DOCTOR users see only appointments where they are the assigned doctor. " +
+                    "ADMIN users can see all appointments or filter by patient identifier."
     )
     @ApiResponses({
             @ApiResponse(
@@ -107,12 +118,26 @@ public class AppointmentController {
     @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<AppointmentResource>> getAppointments(
-            @Parameter(description = "Patient identifier used to filter appointments. If not provided, returns all (ADMIN) or uses JWT patient (PATIENT).",
+            @Parameter(description = "Patient identifier used to filter appointments. Only used by ADMIN users.",
                     example = "1de8f2c5-7c4c-49d4-8fd8-97f2f2f2b101")
             @RequestParam(required = false) UUID patientId) {
-        var appointments = patientId == null
-                ? queryService.findAll()
-                : queryService.findByPatientId(PatientId.of(patientId));
+        var role = jwtClaimsExtractor.extractRole();
+
+        List<com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Appointment> appointments;
+
+        if ("ADMIN".equals(role)) {
+            appointments = patientId == null
+                    ? queryService.findAll()
+                    : queryService.findByPatientId(PatientId.of(patientId));
+        } else if ("PATIENT".equals(role)) {
+            var jwtPatientId = jwtClaimsExtractor.extractPatientId();
+            appointments = queryService.findByPatientId(PatientId.fromString(jwtPatientId));
+        } else if ("DOCTOR".equals(role)) {
+            var jwtDoctorId = jwtClaimsExtractor.extractDoctorId();
+            appointments = queryService.findByDoctorId(DoctorId.fromString(jwtDoctorId));
+        } else {
+            appointments = List.of();
+        }
 
         return ResponseEntity.ok(
                 appointments.stream()

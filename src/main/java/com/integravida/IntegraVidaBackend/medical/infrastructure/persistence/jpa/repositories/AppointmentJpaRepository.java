@@ -10,4 +10,6 @@ public interface AppointmentJpaRepository extends JpaRepository<AppointmentEntit
     List<AppointmentEntity> findAllByOrderByScheduledAtDesc();
 
     List<AppointmentEntity> findAllByPatientIdOrderByScheduledAtDesc(UUID patientId);
+
+    List<AppointmentEntity> findAllByDoctorIdOrderByScheduledAtDesc(UUID doctorId);
 }

@@ -1,6 +1,7 @@
 package com.integravida.IntegraVidaBackend.medical.application.ports.outbound;
 
 import com.integravida.IntegraVidaBackend.medical.domain.model.aggregates.Appointment;
+import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.DoctorId;
 import com.integravida.IntegraVidaBackend.medical.domain.model.valueobjects.PatientId;
 
 import java.util.List;
@@ -13,6 +14,8 @@ public interface AppointmentRepository {
     Optional<Appointment> findById(UUID id);
 
     List<Appointment> findByPatientId(PatientId patientId);
+
+    List<Appointment> findByDoctorId(DoctorId doctorId);
 
     List<Appointment> findAll();
 
